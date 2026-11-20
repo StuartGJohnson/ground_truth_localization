@@ -14,6 +14,7 @@ def generate_launch_description():
         "map_frame_id": "map",
         "odom_frame_id": "odom",
         "base_frame_id": "base_link",
+        "footprint_frame_id": "base_footprint",
         "publish_tf": "true",
         "publish_map_to_odom": "true",
         "use_sim_time": "true",

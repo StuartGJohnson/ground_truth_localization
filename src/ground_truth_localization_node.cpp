@@ -1,3 +1,4 @@
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <stdexcept>
@@ -14,11 +15,14 @@ GroundTruthLocalizationNode::GroundTruthLocalizationNode() : Node("ground_truth_
   map_frame_ = declare_parameter<std::string>("map_frame_id", "map");
   odom_frame_ = declare_parameter<std::string>("odom_frame_id", "odom");
   base_frame_ = declare_parameter<std::string>("base_frame_id", "base_link");
+  footprint_frame_ = declare_parameter<std::string>("footprint_frame_id", "base_footprint");
   publish_tf_ = declare_parameter<bool>("publish_tf", true);
   publish_map_to_odom_ = declare_parameter<bool>("publish_map_to_odom", true);
 
   if (source_topic_ == odom_topic_ || map_frame_.empty() || odom_frame_.empty() ||
-      base_frame_.empty() || map_frame_ == odom_frame_ || odom_frame_ == base_frame_) {
+      base_frame_.empty() || footprint_frame_.empty() || map_frame_ == odom_frame_ ||
+      odom_frame_ == base_frame_ || footprint_frame_ == base_frame_ ||
+      footprint_frame_ == odom_frame_ || footprint_frame_ == map_frame_) {
     throw std::invalid_argument("Source/output topics and map/odom/base frames must be distinct and nonempty");
   }
 
@@ -70,6 +74,19 @@ void GroundTruthLocalizationNode::on_ground_truth(const nav_msgs::msg::Odometry:
     transform.transform.translation.y = odom.pose.pose.position.y;
     transform.transform.translation.z = odom.pose.pose.position.z;
     transform.transform.rotation = odom.pose.pose.orientation;
+    tf_broadcaster_->sendTransform(transform);
+
+    // Nav2 follows a 2D map path. Give it a level frame at the same rear-axle
+    // x/y so roll, pitch, and axle height do not move the lookahead point sideways.
+    const auto &q = odom.pose.pose.orientation;
+    const double yaw = std::atan2(2.0 * (q.w * q.z + q.x * q.y),
+                                  1.0 - 2.0 * (q.y * q.y + q.z * q.z));
+    transform.child_frame_id = footprint_frame_;
+    transform.transform.translation.z = 0.0;
+    transform.transform.rotation.x = 0.0;
+    transform.transform.rotation.y = 0.0;
+    transform.transform.rotation.z = std::sin(yaw / 2.0);
+    transform.transform.rotation.w = std::cos(yaw / 2.0);
     tf_broadcaster_->sendTransform(transform);
   }
 }

@@ -3,8 +3,10 @@
 System ROS 2 Humble node that republishes a simulator's exact
 `nav_msgs/msg/Odometry` from `/ground_truth/odom` as `/odom`. It copies the
 incoming pose, body-frame twist, covariances, and timestamp without estimating
-motion. It publishes the corresponding `odom -> base_link` dynamic TF and,
-by default, an identity `map -> odom` static TF.
+motion. It publishes the corresponding full 3D `odom -> base_link` dynamic TF,
+a level `odom -> base_footprint` TF at the same rear-axle x/y, and, by default,
+an identity `map -> odom` static TF. Nav2 uses `base_footprint` so the tractor's
+roll, pitch, and height do not distort lookahead geometry on a 2D map path.
 
 The input pose must be expressed in `map`; its `child_frame_id` must be
 `base_link`. The node checks both frames and skips mismatches. Output `odom`
@@ -30,7 +32,7 @@ ros2 launch ground_truth_localization ground_truth_localization.launch.py
 
 The launch file defaults to `source_topic:=/ground_truth/odom`,
 `odom_topic:=/odom`, `map_frame_id:=map`, `odom_frame_id:=odom`,
-`base_frame_id:=base_link`, `publish_tf:=true`,
+`base_frame_id:=base_link`, `footprint_frame_id:=base_footprint`, `publish_tf:=true`,
 `publish_map_to_odom:=true`, and `use_sim_time:=true`. Set any of these as a
 launch argument. The executable declares the same topic, frame, and transform
 parameters for direct `ros2 run` use.

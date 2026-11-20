@@ -23,6 +23,7 @@ class GroundTruthLocalizationNode : public rclcpp::Node {
   std::string map_frame_;
   std::string odom_frame_;
   std::string base_frame_;
+  std::string footprint_frame_;
   bool publish_tf_;
   bool publish_map_to_odom_;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr source_sub_;
